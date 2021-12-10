@@ -29,7 +29,12 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-
+    i = len(message)
+    print(i)
+    k = 0
+    while k < i:
+        print(message[k])
+        k += 1
     pass
 
 
@@ -64,6 +69,7 @@ def parse_status(homework):
     i = len(list_w['homeworks'])
     print(i)
     k = 0
+    list_change = []
     while k < i:
         list_hw = list_w["homeworks"][k].get("date_updated")
         update_hw = int(time.mktime(
@@ -72,20 +78,16 @@ def parse_status(homework):
             list_name_hw = list_w["homeworks"][k].get("homework_name")
             list_status_hw = list_w["homeworks"][k].get("status")
             verdict = HOMEWORK_STATUSES.get(list_status_hw)
-            print(f'Изменился статус проверки работы "{list_name_hw}".'
-                  f'{verdict}')
+            list_change.append(f'Изменился статус проверки работы "{list_name_hw}".'
+                               f'{verdict}')
         k += 1
-    # verdict = ...
-
-    # ...
-
-    # return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    return list_change
 
 
 def check_tokens():
     """Проверяем доступность переменных окружения, 
     которые необходимы для работы программы."""
-    pass
+
 
 
 def main():
@@ -118,4 +120,4 @@ def main():
 
 # if __name__ == '__main__':
 #     main()
-parse_status(check_response(get_api_answer(1639054614)))
+check_tokens(parse_status(check_response(get_api_answer(1639054614))))
