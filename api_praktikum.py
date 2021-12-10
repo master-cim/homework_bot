@@ -37,7 +37,7 @@ def get_api_answer(current_timestamp):
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
 
     # Печатаем ответ API в формате JSON
-    print(homework_statuses.text)
+    # print(homework_statuses.text)
 
 # А можно ответ в формате JSON привести к типам данных Python и напечатать и его
     list_w = homework_statuses.json()
@@ -47,12 +47,19 @@ def get_api_answer(current_timestamp):
     li = []
     while k < i:
         list_hw = list_w["homeworks"][k].get("date_updated")
-        k += 1
-        li.append(list_hw)
+        update_hw = int(time.mktime(time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
+        if update_hw > 1637107200:
+            list_name_hw = list_w["homeworks"][k].get("homework_name")
+            list_status_hw = list_w["homeworks"][k].get("status")
+            list_name_hw = dict(homework_name=f'{list_name_hw}', status=f'{list_status_hw}')
+            # superhero_dict = {list_name_hw: list_status_hw}
+            # dict(right_hand='sword', left_hand='shield')
+            li.append(list_name_hw)
+        k += 1        
     print(li)
-    datetime_string = '2021-11-28T16:12:29Z'
-    datetime_obj = int(time.mktime(time.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')))
-    print(datetime_obj)
+    # datetime_string = '2021-11-28T16:12:29Z'
+    # datetime_obj = int(time.mktime(time.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')))
+    # print(datetime_obj)
 
 
 
