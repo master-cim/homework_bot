@@ -1,20 +1,66 @@
 import requests
+from telegram import ReplyKeyboardMarkup
+from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+import random
 import os
+import logging
+import time
+from datetime import datetime
 
 from dotenv import load_dotenv
 
 load_dotenv()
-secret_token = os.getenv('TOKEN')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+# updater = Updater(token=TELEGRAM_TOKEN)
 
-url = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-headers = {'Authorization': f'OAuth {secret_token}'}
-payload = {'from_date': 1639054614-(2629743*2)}
+RETRY_TIME = 600
+ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-# Делаем GET-запрос к эндпоинту url с заголовком headers и параметрами params
-homework_statuses = requests.get(url, headers=headers, params=payload)
 
-# Печатаем ответ API в формате JSON
-print(homework_statuses.text)
+HOMEWORK_STATUSES = {
+    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
+    'reviewing': 'Работа взята на проверку ревьюером.',
+    'rejected': 'Работа проверена: у ревьюера есть замечания.'
+}
+
+
+
+def get_api_answer(current_timestamp):
+    timestamp = current_timestamp or int(time.time())
+    params = {'from_date': timestamp-(2629743*2)}
+
+
+    # Делаем GET-запрос к эндпоинту url с заголовком headers и параметрами params
+    homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+
+    # Печатаем ответ API в формате JSON
+    print(homework_statuses.text)
 
 # А можно ответ в формате JSON привести к типам данных Python и напечатать и его
-# print(homework_statuses.json())
+    list_w = homework_statuses.json()
+    i = len(list_w['homeworks'])
+    print(i)
+    k = 0
+    li = []
+    while k < i:
+        list_hw = list_w["homeworks"][k].get("date_updated")
+        k += 1
+        li.append(list_hw)
+    print(li)
+    datetime_string = '2021-11-28T16:12:29Z'
+    datetime_obj = int(time.mktime(time.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')))
+    print(datetime_obj)
+
+
+
+# def check_response(response):
+#     for index in response:
+#         list_hw = response["homeworks"][index].get("homework_name")
+#     print(list_hw)
+
+
+
+get_api_answer(1639054614)
