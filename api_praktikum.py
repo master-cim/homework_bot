@@ -27,10 +27,9 @@ HOMEWORK_STATUSES = {
 }
 
 
-
 def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp-(2629743*2)}
+    params = {'from_date': timestamp - (2629743*2)}
 
 
     # Делаем GET-запрос к эндпоинту url с заголовком headers и параметрами params
@@ -44,22 +43,22 @@ def get_api_answer(current_timestamp):
     i = len(list_w['homeworks'])
     print(i)
     k = 0
-    li = []
     while k < i:
         list_hw = list_w["homeworks"][k].get("date_updated")
         update_hw = int(time.mktime(time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > 1637107200:
             list_name_hw = list_w["homeworks"][k].get("homework_name")
             list_status_hw = list_w["homeworks"][k].get("status")
-            list_name_hw = dict(homework_name=f'{list_name_hw}', status=f'{list_status_hw}')
+            verdict = HOMEWORK_STATUSES.get(list_status_hw)
+            # list_name_hw = {f'{list_name_hw}': list_status_hw}
             # superhero_dict = {list_name_hw: list_status_hw}
             # dict(right_hand='sword', left_hand='shield')
-            li.append(list_name_hw)
-        k += 1        
-    print(li)
-    # datetime_string = '2021-11-28T16:12:29Z'
-    # datetime_obj = int(time.mktime(time.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')))
-    # print(datetime_obj)
+            # li.append(list_name_hw)
+            print(f'Изменился статус проверки работы "{list_name_hw}". {verdict}')
+        k += 1
+    
+    # print(li)
+
 
 
 
