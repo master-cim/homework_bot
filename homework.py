@@ -1,11 +1,38 @@
 import requests
+import telegram
 from telegram import ReplyKeyboardMarkup, Bot
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 import os
-import logging
+import sys
 import time
 
 from dotenv import load_dotenv
+
+import logging
+from logging.handlers import RotatingFileHandler
+
+
+
+# Здесь задана глобальная конфигурация для всех логгеров
+logging.basicConfig(
+    level=logging.INFO,
+    filename='program.log', 
+    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
+)
+
+# А тут установлены настройки логгера для текущего файла - example_for_log.py
+logger = logging.getLogger(__name__)
+# Устанавливаем уровень, с которого логи будут сохраняться в файл
+logger.setLevel(logging.INFO)
+# Указываем обработчик логов
+handler = RotatingFileHandler('my_logger.log', maxBytes=50000000, backupCount=5)
+logger.addHandler(handler)
+# Создаем форматер
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+# Применяем его к хэндлеру
+handler.setFormatter(formatter)
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -26,10 +53,9 @@ HOMEWORK_STATUSES = {
 }
 
 
-def send_message(message):
+def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     list_messages = message
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # Укажите id своего аккаунта в Telegram
     chat_id = TELEGRAM_CHAT_ID
     # Отправка сообщения
@@ -83,38 +109,39 @@ def parse_status(homework):
 def check_tokens():
     """Проверяем доступность переменных окружения, 
     которые необходимы для работы программы."""
-    pass
+    key_value = ('TELEGRAM_TOKEN',
+                 'PRACTICUM_TOKEN',
+                 'TELEGRAM_CHAT_ID')
+    for key in key_value:
+        try:
+            os.environ[key]
+            logger.info(f'The value of {key} Is set')
+    # Если переменной не присвоено значение, то ошибка
+        except KeyError:
+            logger.exception(f'{key} Environment variable is not set.')
+            # Завершаем процесс выполнения скрипта
+            sys.exit(1)
 
 
-
-# def main():
-#     """Основная логика работы бота."""
-# # подключим токен бота
-#     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-#     current_timestamp = int(time.time())
-#     updater = Updater(token=TELEGRAM_TOKEN)
-
-#     ...
-
-#     while True:
-#         try:
-#             response = get_api_answer(current_timestamp)
-#             for homework in check_response(response):
-#                 send_message(bot, parse_status(homework))
-#             # if 'current_date' in response:
-#             #     current_timestamp = response['current_date']
-#             current_timestamp = int(time.time())
-#             time.sleep(RETRY_TIME)
-#         except Exception as error:
-#             message = f'Сбой в работе программы: {error}'
-#             logging.error(message)
-#             bot.send_message(TELEGRAM_CHAT_ID, message)
-#             time.sleep(RETRY_TIME)
-#         else:
-#             ...
-            
-    
-
+def main():
+    """Основная логика работы бота."""
+# подключим токен бота
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    current_timestamp = int(time.time())
+    # updater = Updater(token=TELEGRAM_TOKEN)
+    while True:
+        try:
+            check_tokens()
+            response = get_api_answer(current_timestamp)
+            homework = check_response(response)
+            send_message(bot, parse_status(homework))
+            time.sleep(RETRY_TIME)
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logging.error(message)
+            bot.send_message(TELEGRAM_CHAT_ID, message)
+            time.sleep(RETRY_TIME)
+        # else:
 #     updater.dispatcher.add_handler(CommandHandler('start', wake_up))
 #     updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
 #     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_hi))
@@ -125,10 +152,5 @@ def check_tokens():
 #     updater.idle() 
 #     pass
 
-
-
-# if __name__ == '__main__':
-#     main()
-# get_api_answer(1639054614)
-send_message(parse_status(check_response(get_api_answer(1639054614))))
-# check_tokens(parse_status(check_response(get_api_answer(1639054614))))
+if __name__ == '__main__':
+    main()
