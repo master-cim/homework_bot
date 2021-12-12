@@ -12,26 +12,14 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
-
-# Здесь задана глобальная конфигурация для всех логгеров
-logging.basicConfig(
-    level=logging.INFO,
-    filename='program.log', 
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
-)
-
-# А тут установлены настройки логгера для текущего файла - example_for_log.py
 logger = logging.getLogger(__name__)
-# Устанавливаем уровень, с которого логи будут сохраняться в файл
 logger.setLevel(logging.INFO)
-# Указываем обработчик логов
-handler = RotatingFileHandler('my_logger.log', maxBytes=50000000, backupCount=5)
+handler = RotatingFileHandler('my_logger.log', maxBytes=50000000,
+                              backupCount=5, encoding = "UTF-8")
 logger.addHandler(handler)
-# Создаем форматер
 formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    '%(asctime)s [%(levelname)s] %(message)s'
 )
-# Применяем его к хэндлеру
 handler.setFormatter(formatter)
 
 load_dotenv()
@@ -56,11 +44,10 @@ HOMEWORK_STATUSES = {
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     list_messages = message
-    # Укажите id своего аккаунта в Telegram
     chat_id = TELEGRAM_CHAT_ID
-    # Отправка сообщения
     for text in list_messages:
         bot.send_message(chat_id, text)
+        logger.info(f'Бот отправил сообщение: {text}.')
 
 
 def get_api_answer(current_timestamp):
@@ -78,12 +65,14 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяем ответ API на корректность."""
     if type(response) is not dict:
-        raise TypeError('Не получен словарь от API-сервиса')
+        raise TypeError('Не получен словарь от API-сервиса: %s')
+    logging.raiseExceptions = True
     if not 'homeworks':
         raise KeyError('Нет ключа homeworks в словаре')
+    logging.raiseExceptions =True
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    # print(response.get('homeworks'))
+    logging.raiseExceptions =True
     return(response)
 
 
@@ -115,11 +104,12 @@ def check_tokens():
     for key in key_value:
         try:
             os.environ[key]
-            logger.info(f'The value of {key} Is set')
-    # Если переменной не присвоено значение, то ошибка
-        except KeyError:
-            logger.exception(f'{key} Environment variable is not set.')
-            # Завершаем процесс выполнения скрипта
+            logger.info(f'Переменная окружения {key} установлена.')
+        except NameError:
+            logger.critical(
+                f'Отсутствует обязательная переменная окружения: {key}. '
+                'Программа принудительно остановлена.'
+            )
             sys.exit(1)
 
 
@@ -141,7 +131,8 @@ def main():
             logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
             time.sleep(RETRY_TIME)
-        # else:
+        else:
+            break
 #     updater.dispatcher.add_handler(CommandHandler('start', wake_up))
 #     updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
 #     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_hi))
