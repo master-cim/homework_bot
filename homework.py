@@ -1,7 +1,6 @@
 import requests
-from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, Bot
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
-import random
 import os
 import logging
 import time
@@ -27,15 +26,15 @@ HOMEWORK_STATUSES = {
 }
 
 
-def send_message(bot, message):
+def send_message(message):
     """Отправляет сообщение в Telegram чат."""
-    i = len(message)
-    print(i)
-    k = 0
-    while k < i:
-        print(message[k])
-        k += 1
-    pass
+    list_messages = message
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    # Укажите id своего аккаунта в Telegram
+    chat_id = TELEGRAM_CHAT_ID
+    # Отправка сообщения
+    for text in list_messages:
+        bot.send_message(chat_id, text)
 
 
 def get_api_answer(current_timestamp):
@@ -65,59 +64,71 @@ def check_response(response):
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework
-    i = len(list_w['homeworks'])
-    print(i)
-    k = 0
+    list_w = homework['homeworks']
     list_change = []
-    while k < i:
-        list_hw = list_w["homeworks"][k].get("date_updated")
+    for homework in list_w:
+        list_hw = homework.get("date_updated")
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > 1637107200:
-            list_name_hw = list_w["homeworks"][k].get("homework_name")
-            list_status_hw = list_w["homeworks"][k].get("status")
+            list_name_hw = homework.get("homework_name")
+            list_status_hw = homework.get("status")
             verdict = HOMEWORK_STATUSES.get(list_status_hw)
-            list_change.append(f'Изменился статус проверки работы "{list_name_hw}".'
-                               f'{verdict}')
-        k += 1
+            list_change.append(
+                f'Изменился статус проверки работы "{list_name_hw}".'
+                f'{verdict}')
     return list_change
 
 
 def check_tokens():
     """Проверяем доступность переменных окружения, 
     которые необходимы для работы программы."""
+    pass
 
 
 
-def main():
-    """Основная логика работы бота."""
+# def main():
+#     """Основная логика работы бота."""
+# # подключим токен бота
+#     bot = telegram.Bot(token=TELEGRAM_TOKEN)
+#     current_timestamp = int(time.time())
+#     updater = Updater(token=TELEGRAM_TOKEN)
 
-    ...
+#     ...
 
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+#     while True:
+#         try:
+#             response = get_api_answer(current_timestamp)
+#             for homework in check_response(response):
+#                 send_message(bot, parse_status(homework))
+#             # if 'current_date' in response:
+#             #     current_timestamp = response['current_date']
+#             current_timestamp = int(time.time())
+#             time.sleep(RETRY_TIME)
+#         except Exception as error:
+#             message = f'Сбой в работе программы: {error}'
+#             logging.error(message)
+#             bot.send_message(TELEGRAM_CHAT_ID, message)
+#             time.sleep(RETRY_TIME)
+#         else:
+#             ...
+            
+    
 
-    ...
+#     updater.dispatcher.add_handler(CommandHandler('start', wake_up))
+#     updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
+#     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_hi))
+#     # Метод start_polling() запускает процесс polling, 
+#     # приложение начнёт отправлять регулярные запросы для получения обновлений.
+#     updater.start_polling(poll_interval=RETRY_TIME)
+#     # Бот будет работать до тех пор, пока не нажмете Ctrl-C
+#     updater.idle() 
+#     pass
 
-    while True:
-        try:
-            response = get_api_answer(current_timestamp)
-            for homework in check_response(response):
-                send_message(bot, parse_status(homework))
-            # if 'current_date' in response:
-            #     current_timestamp = response['current_date']
-            current_timestamp = int(time.time())
-            time.sleep(RETRY_TIME)
-        except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            logging.error(message)
-            bot.send_message(TELEGRAM_CHAT_ID, message)
-            time.sleep(RETRY_TIME)
-        else:
-            ...
 
 
 # if __name__ == '__main__':
 #     main()
-check_tokens(parse_status(check_response(get_api_answer(1639054614))))
+# get_api_answer(1639054614)
+send_message(parse_status(check_response(get_api_answer(1639054614))))
+# check_tokens(parse_status(check_response(get_api_answer(1639054614))))
