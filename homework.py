@@ -17,7 +17,7 @@ from logging.handlers import RotatingFileHandler
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler('my_logger.log', maxBytes=50000000,
-                              backupCount=5, encoding = "UTF-8")
+                              backupCount=5, encoding="UTF-8")
 logger.addHandler(handler)
 formatter = logging.Formatter(
     '%(asctime)s [%(levelname)s] %(message)s'
@@ -55,7 +55,7 @@ def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
     last_timestamp = timestamp - RETRY_TIME
-    params = {'from_date': timestamp-RETRY_TIME}
+    params = {'from_date': last_timestamp}
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
     return(homework_statuses.json())
 
@@ -135,8 +135,9 @@ def main():
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             print(homework)
-            if homework['homeworks'] == empty_list: 
-                logger.debug('Нет обновлений')      
+            if homework['homeworks'] == empty_list:
+                logger.debug('Нет обновлений')
+            else:
                 send_message(bot, parse_status(homework))
         except Exception as error:
             message = f'Сбой в работе программы: {error}'

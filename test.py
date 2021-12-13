@@ -38,6 +38,7 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     list_messages = message
@@ -45,6 +46,7 @@ def send_message(bot, message):
     for text in list_messages:
         bot.send_message(chat_id, text)
         logger.info(f'Бот отправил сообщение: {text}.')
+
 
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
@@ -56,6 +58,7 @@ def get_api_answer(current_timestamp):
     # print(homework_statuses.text)
     # Возвращаем ответ в формате JSON привести к типам данных Python
     return(homework_statuses.json())
+
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
@@ -69,6 +72,7 @@ def check_response(response):
         raise TypeError('Зачения ключа homeworks приходят не списком')
     logging.raiseExceptions =True
     return(response)
+
 
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
@@ -89,6 +93,7 @@ def parse_status(homework):
                 f'{verdict}')
     return list_change
 
+
 def check_tokens():
     """Проверяем доступность переменных окружения, 
     которые необходимы для работы программы."""
@@ -99,12 +104,13 @@ def check_tokens():
         try:
             os.environ[key]
             logger.info(f'Переменная окружения {key} установлена.')
-        except NameError:
+        except ValueError:
             logger.critical(
                 f'Отсутствует обязательная переменная окружения: {key}. '
                 'Программа принудительно остановлена.'
             )
             sys.exit(1)
+
 
 def main():
     """Основная логика работы бота."""
