@@ -53,26 +53,18 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
-    timestamp = current_timestamp or int(time.time())
-    last_timestamp = timestamp - RETRY_TIME
+    timestamp = current_timestamp or time.time()
+    last_timestamp = timestamp
     params = {'from_date': last_timestamp}
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    if homework_statuses.status_code != 200:
+        raise Exception('API возвращает код, отличный от 200')
+    logger.exception
     return(homework_statuses.json())
 
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
-    # timestamp = int(time.time())
-    # params = {'from_date': timestamp}
-    # homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    # code = homework_statuses.status_code
-    # if code == HTTPStatus.OK:
-    #     logger.info(f'Есть доступ к {ENDPOINT}.')
-    # else:
-    #     logger.exception('Ошибка {code} при открытиии {ENDPOINT}.')
-    # if type(response) is not dict:
-    #     raise TypeError('Не получен словарь от API-сервиса: %s')
-    # logger.exception
     if type(response) is not dict:
         raise TypeError('Не получен словарь от API-сервиса: %s')
     if not 'homeworks':
@@ -85,16 +77,16 @@ def check_response(response):
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework['homeworks']
+    list_w = homework.get('homeworks')
     list_change = []
     last_timestamp = int(time.time()) - RETRY_TIME
     for work in list_w:
-        list_hw = work["date_updated"]
+        list_hw = work.get("date_updated")
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > last_timestamp:
-            list_name_hw = work["homework_name"]
-            list_status_hw = work["status"]
+            list_name_hw = work.get("homework_name")
+            list_status_hw = work.get("status")
             if list_status_hw in HOMEWORK_STATUSES.keys():
                 verdict = HOMEWORK_STATUSES.get(list_status_hw)
                 list_change.append(
