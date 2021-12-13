@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from http import HTTPStatus
+from os import environ
 
 
 from dotenv import load_dotenv
@@ -105,15 +106,17 @@ def check_tokens():
                  'PRACTICUM_TOKEN',
                  'TELEGRAM_CHAT_ID')
     for key in key_value:
-        try:
-            os.environ[key]
+        if environ.get('key') is not None:
             logger.info(f'Переменная окружения {key} установлена.')
-        except ValueError:
+        else:
+            Exception(
+                f'Отсутствует обязательная переменная окружения: {key}'
+                ' Программа принудительно остановлена')
             logger.critical(
                 f'Отсутствует обязательная переменная окружения: {key}. '
                 'Программа принудительно остановлена.'
             )
-            sys.exit(1)
+            SystemExit: 1
 
 
 def main():
