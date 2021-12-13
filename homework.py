@@ -105,18 +105,18 @@ def check_tokens():
     key_value = ('TELEGRAM_TOKEN',
                  'PRACTICUM_TOKEN',
                  'TELEGRAM_CHAT_ID')
+    flag = True
     for key in key_value:
         if environ.get('key') is not None:
+            flag = True
             logger.info(f'Переменная окружения {key} установлена.')
         else:
-            Exception(
+            flag = False
+            logger.critical(
                 f'Отсутствует обязательная переменная окружения: {key}'
                 ' Программа принудительно остановлена')
-            logger.critical(
-                f'Отсутствует обязательная переменная окружения: {key}. '
-                'Программа принудительно остановлена.'
-            )
             SystemExit: 1
+    return(flag)
 
 
 def main():
