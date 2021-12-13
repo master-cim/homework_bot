@@ -5,17 +5,14 @@ from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 import os
 import sys
 import time
-from http import HTTPStatus
-
 
 from dotenv import load_dotenv
 
 import logging
 from logging.handlers import RotatingFileHandler
 
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 handler = RotatingFileHandler('my_logger.log', maxBytes=50000000,
                               backupCount=5, encoding = "UTF-8")
 logger.addHandler(handler)
@@ -28,19 +25,18 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+updater = Updater(token=TELEGRAM_TOKEN)
 
 RETRY_TIME = 600
 TEST_TIME = 2629743 # один месяц
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-
 HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
-
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
@@ -50,61 +46,48 @@ def send_message(bot, message):
         bot.send_message(chat_id, text)
         logger.info(f'Бот отправил сообщение: {text}.')
 
-
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp - RETRY_TIME}
+    params = {'from_date': timestamp - TEST_TIME}
+    # Делаем GET-запрос к эндпоинту url с заголовком headers и параметрами params
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    # Печатаем ответ API в формате JSON
+    # print(homework_statuses.text)
+    # Возвращаем ответ в формате JSON привести к типам данных Python
     return(homework_statuses.json())
-
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
-    # timestamp = int(time.time())
-    # params = {'from_date': timestamp}
-    # homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    # code = homework_statuses.status_code
-    # if code == HTTPStatus.OK:
-    #     logger.info(f'Есть доступ к {ENDPOINT}.')
-    # else:
-    #     logger.exception('Ошибка {code} при открытиии {ENDPOINT}.')
-    # if type(response) is not dict:
-    #     raise TypeError('Не получен словарь от API-сервиса: %s')
-    # logger.exception
+    if type(response) is not dict:
+        raise TypeError('Не получен словарь от API-сервиса: %s')
+    logging.raiseExceptions = True
     if not 'homeworks':
         raise KeyError('Нет ключа homeworks в словаре')
-    logger.exception
+    logging.raiseExceptions =True
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    logger.exception
+    logging.raiseExceptions =True
     return(response)
-
 
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework[1]
+    list_w = homework['homeworks']
     print(list_w)
     list_change = []
-    last_timestamp = int(time.time()) - RETRY_TIME
-    for work in list_w:
-        list_hw = work["date_updated"]
+    for homework in list_w:
+        list_hw = homework["date_updated"]
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
-        if update_hw > last_timestamp:
-            list_name_hw = work["homework_name"]
-            list_status_hw = work["status"]
-            if list_status_hw in HOMEWORK_STATUSES.keys():
-                verdict = HOMEWORK_STATUSES.get(list_status_hw)
-                list_change.append(
-                    f'Изменился статус проверки работы "{list_name_hw}".'
-                    f'{verdict}')
-            else:
-                message = f'Неизвестный статус работы - {list_status_hw}'
-                logger.error(message)
+        if update_hw > 1637107200:
+            list_name_hw = homework.get("homework_name")
+            list_status_hw = homework.get("status")
+            verdict = HOMEWORK_STATUSES.get(list_status_hw)
+            list_change.append(
+                f'Изменился статус проверки работы "{list_name_hw}".'
+                f'{verdict}')
     return list_change
-
 
 def check_tokens():
     """Проверяем доступность переменных окружения, 
@@ -116,35 +99,42 @@ def check_tokens():
         try:
             os.environ[key]
             logger.info(f'Переменная окружения {key} установлена.')
-        except ValueError:
+        except NameError:
             logger.critical(
                 f'Отсутствует обязательная переменная окружения: {key}. '
                 'Программа принудительно остановлена.'
             )
             sys.exit(1)
 
-
 def main():
     """Основная логика работы бота."""
+# подключим токен бота
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    empty_list = []
+    # updater = Updater(token=TELEGRAM_TOKEN)
     while True:
         try:
             check_tokens()
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            if homework['homeworks'] == empty_list: 
-                logger.debug('Нет обновлений')      
-                send_message(bot, parse_status(homework))
+            send_message(bot, parse_status(homework))
+            time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logger.error(message)
+            logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
             time.sleep(RETRY_TIME)
         else:
-            time.sleep(RETRY_TIME)
-
+            break
+#     updater.dispatcher.add_handler(CommandHandler('start', wake_up))
+#     updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
+#     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_hi))
+#     # Метод start_polling() запускает процесс polling, 
+#     # приложение начнёт отправлять регулярные запросы для получения обновлений.
+#     updater.start_polling(poll_interval=RETRY_TIME)
+#     # Бот будет работать до тех пор, пока не нажмете Ctrl-C
+#     updater.idle() 
+#     pass
 
 if __name__ == '__main__':
     main()

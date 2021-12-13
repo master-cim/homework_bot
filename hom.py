@@ -5,8 +5,6 @@ from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 import os
 import sys
 import time
-from http import HTTPStatus
-
 
 from dotenv import load_dotenv
 
@@ -28,6 +26,7 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+# updater = Updater(token=TELEGRAM_TOKEN)
 
 RETRY_TIME = 600
 TEST_TIME = 2629743 # один месяц
@@ -54,47 +53,41 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp - RETRY_TIME}
+    params = {'from_date': timestamp - 2629743}
+    # Делаем GET-запрос к эндпоинту url с заголовком headers и параметрами params
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    # Печатаем ответ API в формате JSON
+    # print(homework_statuses.text)
+    # Возвращаем ответ в формате JSON привести к типам данных Python
     return(homework_statuses.json())
 
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
-    # timestamp = int(time.time())
-    # params = {'from_date': timestamp}
-    # homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    # code = homework_statuses.status_code
-    # if code == HTTPStatus.OK:
-    #     logger.info(f'Есть доступ к {ENDPOINT}.')
-    # else:
-    #     logger.exception('Ошибка {code} при открытиии {ENDPOINT}.')
-    # if type(response) is not dict:
-    #     raise TypeError('Не получен словарь от API-сервиса: %s')
-    # logger.exception
+    if type(response) is not dict:
+        raise TypeError('Не получен словарь от API-сервиса: %s')
+    # logging.raiseExceptions = True
     if not 'homeworks':
         raise KeyError('Нет ключа homeworks в словаре')
-    logger.exception
+    # logging.raiseExceptions =True
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    logger.exception
+    # logging.raiseExceptions =True
     return(response)
 
 
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework[1]
-    print(list_w)
+    list_w = homework['homeworks']
     list_change = []
-    last_timestamp = int(time.time()) - RETRY_TIME
-    for work in list_w:
-        list_hw = work["date_updated"]
+    for homework in list_w:
+        list_hw = homework.get("date_updated")
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
-        if update_hw > last_timestamp:
-            list_name_hw = work["homework_name"]
-            list_status_hw = work["status"]
+        if update_hw > int(time.time())-2629743:
+            list_name_hw = homework.get("homework_name")
+            list_status_hw = homework.get("status")
             if list_status_hw in HOMEWORK_STATUSES.keys():
                 verdict = HOMEWORK_STATUSES.get(list_status_hw)
                 list_change.append(
@@ -102,7 +95,7 @@ def parse_status(homework):
                     f'{verdict}')
             else:
                 message = f'Неизвестный статус работы - {list_status_hw}'
-                logger.error(message)
+                logging.error(message)
     return list_change
 
 
@@ -116,7 +109,7 @@ def check_tokens():
         try:
             os.environ[key]
             logger.info(f'Переменная окружения {key} установлена.')
-        except ValueError:
+        except NameError:
             logger.critical(
                 f'Отсутствует обязательная переменная окружения: {key}. '
                 'Программа принудительно остановлена.'
@@ -126,25 +119,36 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
+# подключим токен бота
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    empty_list = []
+    # updater = Updater(token=TELEGRAM_TOKEN)
     while True:
         try:
             check_tokens()
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            if homework['homeworks'] == empty_list: 
-                logger.debug('Нет обновлений')      
+            if homework is not []: 
                 send_message(bot, parse_status(homework))
+            else:
+                message = 'Нет обновлений'
+                logging.debug(message)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logger.error(message)
+            logging.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
             time.sleep(RETRY_TIME)
         else:
             time.sleep(RETRY_TIME)
-
+#     updater.dispatcher.add_handler(CommandHandler('start', wake_up))
+#     updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
+#     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_hi))
+#     # Метод start_polling() запускает процесс polling, 
+#     # приложение начнёт отправлять регулярные запросы для получения обновлений.
+#     updater.start_polling(poll_interval=RETRY_TIME)
+#     # Бот будет работать до тех пор, пока не нажмете Ctrl-C
+#     updater.idle() 
+#     pass
 
 if __name__ == '__main__':
     main()
