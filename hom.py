@@ -82,12 +82,12 @@ def parse_status(homework):
     list_w = homework['homeworks']
     list_change = []
     for homework in list_w:
-        list_hw = homework.get("date_updated")
+        list_hw = homework["date_updated"]
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > int(time.time())-2629743:
-            list_name_hw = homework.get("homework_name")
-            list_status_hw = homework.get("status")
+            list_name_hw = homework["homework_name"]
+            list_status_hw = homework["status"]
             if list_status_hw in HOMEWORK_STATUSES.keys():
                 verdict = HOMEWORK_STATUSES.get(list_status_hw)
                 list_change.append(

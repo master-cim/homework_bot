@@ -72,20 +72,19 @@ def check_response(response):
     # if type(response) is not dict:
     #     raise TypeError('Не получен словарь от API-сервиса: %s')
     # logger.exception
+    if type(response) is not dict:
+        raise TypeError('Не получен словарь от API-сервиса: %s')
     if not 'homeworks':
         raise KeyError('Нет ключа homeworks в словаре')
-    logger.exception
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    logger.exception
     return(response)
 
 
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework[1]
-    print(list_w)
+    list_w = homework['homeworks']
     list_change = []
     last_timestamp = int(time.time()) - RETRY_TIME
     for work in list_w:
@@ -134,6 +133,7 @@ def main():
             check_tokens()
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
+            print(homework)
             if homework['homeworks'] == empty_list: 
                 logger.debug('Нет обновлений')      
                 send_message(bot, parse_status(homework))
