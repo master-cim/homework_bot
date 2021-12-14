@@ -79,14 +79,14 @@ def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
     list_w = homework
-    print(list_w)
+    # print(list_w)
     list_change = []
     last_timestamp = int(time.time()) - TEST_TIME
     # while list_w is not None:
     for work in list_w:
-        list_hw = work["date_updated"]
+        print(work) 
         update_hw = int(time.mktime(
-            time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
+            time.strptime(work["date_updated"], '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > last_timestamp:
             list_name_hw = work["homework_name"]
             list_status_hw = work["status"]
@@ -143,7 +143,7 @@ def main():
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            print(homework)
+            # print(homework)
             if homework['homeworks'] == empty_list:
                 logger.debug('Нет обновлений')
             else:
