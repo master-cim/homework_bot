@@ -78,23 +78,28 @@ def check_response(response):
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework.get('homeworks')
+    list_w = homework
+    print(list_w)
     list_change = []
-    last_timestamp = int(time.time()) - RETRY_TIME
+    last_timestamp = int(time.time()) - TEST_TIME
+    # while list_w is not None:
     for work in list_w:
-        list_hw = work.get("date_updated")
+        list_hw = work["date_updated"]
         update_hw = int(time.mktime(
             time.strptime(list_hw, '%Y-%m-%dT%H:%M:%SZ')))
         if update_hw > last_timestamp:
-            list_name_hw = work.get("homework_name")
-            list_status_hw = work.get("status")
+            list_name_hw = work["homework_name"]
+            list_status_hw = work["status"]
             if list_status_hw in HOMEWORK_STATUSES.keys():
-                verdict = HOMEWORK_STATUSES.get(list_status_hw)
+                verdict = HOMEWORK_STATUSES.get(
+                    list_status_hw)
                 list_change.append(
-                    f'Изменился статус проверки работы "{list_name_hw}".'
-                    f'{verdict}')
+                        'Изменился статус проверки'
+                        f' работы "{list_name_hw}".'
+                        f'{verdict}')
             else:
-                message = f'Неизвестный статус работы - {list_status_hw}'
+                message = ('Неизвестный статус работы'
+                               f' - {list_status_hw}')
                 logger.error(message)
     return list_change
 
@@ -102,37 +107,47 @@ def parse_status(homework):
 def check_tokens():
     """Проверяем доступность переменных окружения, 
     которые необходимы для работы программы."""
-    key_value = ('TELEGRAM_TOKEN',
-                 'PRACTICUM_TOKEN',
-                 'TELEGRAM_CHAT_ID')
-    flag = True
-    for key in key_value:
-        if environ.get('key') is not None:
-            flag = True
-            logger.info(f'Переменная окружения {key} установлена.')
-        else:
-            flag = False
-            logger.critical(
-                f'Отсутствует обязательная переменная окружения: {key}'
-                ' Программа принудительно остановлена')
-            SystemExit: 1
-    return(flag)
+    if TELEGRAM_TOKEN is not None and TELEGRAM_CHAT_ID is not None and PRACTICUM_TOKEN is not None:
+        logger.info(f'Переменные окружения установлены.') 
+        return True 
+    else:
+        return False
+
+    # key_value = ('TELEGRAM_TOKEN',
+    #              'PRACTICUM_TOKEN',
+    #              'TELEGRAM_CHAT_ID')
+    # if all(environ.get(key) for key in key_value
+    #        ) and all(key in os.environ for key in key_value):
+    #     # for key in key_value:
+    #     #     print(os.environ.get(key))
+    #     logger.info(f'Переменные окружения установлены.')
+    #     return True
+    # else:
+    #     for key in key_value:
+    #         if environ.get(key) is None:
+    #             # print(os.environ.get(key))
+    #             logger.critical(
+    #                 f'Отсутствует обязательная переменная окружения: {key}'
+    #                 ' Программа принудительно остановлена')
+    #         # SystemExit: 1
+    #     return False
 
 
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = int(time.time()) - TEST_TIME
     empty_list = []
+    check_tokens()
     while True:
         try:
-            check_tokens()
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             print(homework)
             if homework['homeworks'] == empty_list:
                 logger.debug('Нет обновлений')
             else:
+                homework = homework.get('homeworks')
                 send_message(bot, parse_status(homework))
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
