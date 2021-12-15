@@ -78,29 +78,24 @@ def check_response(response):
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
-    list_w = homework
+    work = homework
     # print(list_w)
     list_change = []
-    last_timestamp = int(time.time()) - TEST_TIME
+    # last_timestamp = int(time.time()) - TEST_TIME
     # while list_w is not None:
-    for work in list_w:
-        print(work) 
-        update_hw = int(time.mktime(
-            time.strptime(work["date_updated"], '%Y-%m-%dT%H:%M:%SZ')))
-        if update_hw > last_timestamp:
-            list_name_hw = work["homework_name"]
-            list_status_hw = work["status"]
-            if list_status_hw in HOMEWORK_STATUSES.keys():
-                verdict = HOMEWORK_STATUSES.get(
-                    list_status_hw)
-                list_change.append(
-                        'Изменился статус проверки'
-                        f' работы "{list_name_hw}".'
-                        f'{verdict}')
-            else:
-                message = ('Неизвестный статус работы'
-                               f' - {list_status_hw}')
-                logger.error(message)
+    name_hw = work["homework_name"]
+    status_hw = work["status"]
+    if status_hw in HOMEWORK_STATUSES.keys():
+        verdict = HOMEWORK_STATUSES.get(
+                status_hw)
+        list_change.append(
+                'Изменился статус проверки'
+                f' работы "{name_hw}".'
+                f'{verdict}')
+    else:
+        message = ('Неизвестный статус работы'
+                      f' - {status_hw}')
+        logger.error(message)
     return list_change
 
 
@@ -148,7 +143,12 @@ def main():
                 logger.debug('Нет обновлений')
             else:
                 homework = homework.get('homeworks')
-                send_message(bot, parse_status(homework))
+                for work in homework:
+                    update_hw = int(time.mktime(
+                        time.strptime(work["date_updated"],
+                                      '%Y-%m-%dT%H:%M:%SZ')))
+                    if update_hw > current_timestamp:
+                        send_message(bot, parse_status(work))
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
