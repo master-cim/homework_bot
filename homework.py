@@ -26,7 +26,6 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
-TEST_TIME = 2629743 # один месяц
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -71,8 +70,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Извлекаем из информации о конкретной домашней
-        работе статус этой работы."""
+    """Извлекаем статус домашней работы."""
     work = homework
     name_hw = work["homework_name"]
     status_hw = work["status"]
@@ -87,8 +85,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Проверяем доступность переменных окружения,
-    которые необходимы для работы программы."""
+    """Проверяем доступность переменных окружения."""
     if (TELEGRAM_TOKEN is not None
             and TELEGRAM_CHAT_ID is not None
             and PRACTICUM_TOKEN is not None):
@@ -101,7 +98,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) - TEST_TIME
+    current_timestamp = int(time.time()) - RETRY_TIME
     empty_list = []
     check_tokens()
     while True:
