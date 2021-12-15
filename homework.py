@@ -72,23 +72,21 @@ def check_response(response):
         raise KeyError('Нет ключа homeworks в словаре')
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    return(response)
+    return(response['homeworks'])
 
 
 def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
     work = homework
-    # print(list_w)
-    list_change = []
-    # last_timestamp = int(time.time()) - TEST_TIME
-    # while list_w is not None:
+    print(work)
+    # list_change = []
     name_hw = work["homework_name"]
     status_hw = work["status"]
     if status_hw in HOMEWORK_STATUSES.keys():
         verdict = HOMEWORK_STATUSES.get(
                 status_hw)
-        list_change.append(
+        change = (
                 'Изменился статус проверки'
                 f' работы "{name_hw}".'
                 f'{verdict}')
@@ -96,7 +94,8 @@ def parse_status(homework):
         message = ('Неизвестный статус работы'
                       f' - {status_hw}')
         logger.error(message)
-    return list_change
+        raise TypeError(message)
+    return change
 
 
 def check_tokens():
@@ -139,10 +138,10 @@ def main():
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             # print(homework)
-            if homework['homeworks'] == empty_list:
+            if homework == empty_list:
                 logger.debug('Нет обновлений')
             else:
-                homework = homework.get('homeworks')
+                # homework = homework.get('homeworks')
                 for work in homework:
                     update_hw = int(time.mktime(
                         time.strptime(work["date_updated"],
