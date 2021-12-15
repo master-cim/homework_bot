@@ -1,12 +1,7 @@
 import requests
 import telegram
-from telegram import ReplyKeyboardMarkup, Bot
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 import os
-import sys
 import time
-from http import HTTPStatus
-from os import environ
 
 
 from dotenv import load_dotenv
@@ -45,11 +40,10 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-    list_messages = message
+    text = message
     chat_id = TELEGRAM_CHAT_ID
-    for text in list_messages:
-        bot.send_message(chat_id, text)
-        logger.info(f'Бот отправил сообщение: {text}.')
+    bot.send_message(chat_id, text)
+    logger.info(f'Бот отправил сообщение: {text}.')
 
 
 def get_api_answer(current_timestamp):
@@ -57,7 +51,8 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or time.time()
     last_timestamp = timestamp
     params = {'from_date': last_timestamp}
-    homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
+                                     params=params)
     if homework_statuses.status_code != 200:
         raise Exception('API возвращает код, отличный от 200')
     logger.exception
@@ -79,52 +74,28 @@ def parse_status(homework):
     """Извлекаем из информации о конкретной домашней
         работе статус этой работы."""
     work = homework
-    print(work)
-    # list_change = []
     name_hw = work["homework_name"]
     status_hw = work["status"]
     if status_hw in HOMEWORK_STATUSES.keys():
-        verdict = HOMEWORK_STATUSES.get(
-                status_hw)
-        change = (
-                'Изменился статус проверки'
-                f' работы "{name_hw}".'
-                f'{verdict}')
+        verdict = HOMEWORK_STATUSES.get(status_hw)
+        change = f'Изменился статус проверки работы "{name_hw}".{verdict}'
     else:
-        message = ('Неизвестный статус работы'
-                      f' - {status_hw}')
+        message = (f'Неизвестный статус работы - {status_hw}')
         logger.error(message)
         raise TypeError(message)
     return change
 
 
 def check_tokens():
-    """Проверяем доступность переменных окружения, 
+    """Проверяем доступность переменных окружения,
     которые необходимы для работы программы."""
-    if TELEGRAM_TOKEN is not None and TELEGRAM_CHAT_ID is not None and PRACTICUM_TOKEN is not None:
-        logger.info(f'Переменные окружения установлены.') 
-        return True 
+    if (TELEGRAM_TOKEN is not None
+            and TELEGRAM_CHAT_ID is not None
+            and PRACTICUM_TOKEN is not None):
+        logger.info('Переменные окружения установлены.')
+        return True
     else:
         return False
-
-    # key_value = ('TELEGRAM_TOKEN',
-    #              'PRACTICUM_TOKEN',
-    #              'TELEGRAM_CHAT_ID')
-    # if all(environ.get(key) for key in key_value
-    #        ) and all(key in os.environ for key in key_value):
-    #     # for key in key_value:
-    #     #     print(os.environ.get(key))
-    #     logger.info(f'Переменные окружения установлены.')
-    #     return True
-    # else:
-    #     for key in key_value:
-    #         if environ.get(key) is None:
-    #             # print(os.environ.get(key))
-    #             logger.critical(
-    #                 f'Отсутствует обязательная переменная окружения: {key}'
-    #                 ' Программа принудительно остановлена')
-    #         # SystemExit: 1
-    #     return False
 
 
 def main():
@@ -137,11 +108,9 @@ def main():
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            # print(homework)
             if homework == empty_list:
                 logger.debug('Нет обновлений')
             else:
-                # homework = homework.get('homeworks')
                 for work in homework:
                     update_hw = int(time.mktime(
                         time.strptime(work["date_updated"],
