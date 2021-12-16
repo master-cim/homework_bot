@@ -2,6 +2,7 @@ import requests
 import telegram
 import os
 import time
+import telegram.error
 
 
 from dotenv import load_dotenv
@@ -39,10 +40,13 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-
-    bot.send_message(TELEGRAM_CHAT_ID, message)
-    logger.info(f'Бот отправил сообщение: {message}.')
-
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+        logger.info(f'Бот отправил сообщение: {message}.')
+    except telegram.error.TelegramError as te:
+        logger.error(
+            "Ошибка проверки Telegram: {error}".format(
+                error=te.message))
 
 
 def get_api_answer(current_timestamp):
