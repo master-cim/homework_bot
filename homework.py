@@ -22,10 +22,11 @@ handler.setFormatter(formatter)
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_RETRY_TIME = 600
 
-RETRY_TIME = 600
+
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -98,7 +99,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) - RETRY_TIME
+    current_timestamp = int(time.time()) - TELEGRAM_RETRY_TIME
     empty_list = []
     check_tokens()
     while True:
