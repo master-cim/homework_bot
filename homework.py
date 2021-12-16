@@ -41,16 +41,14 @@ HOMEWORK_STATUSES = {
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
     text = message
-    chat_id = TELEGRAM_CHAT_ID
-    bot.send_message(chat_id, text)
+    bot.send_message(TELEGRAM_CHAT_ID, text)
     logger.info(f'Бот отправил сообщение: {text}.')
 
 
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or time.time()
-    last_timestamp = timestamp
-    params = {'from_date': last_timestamp}
+    params = {'from_date': timestamp}
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
                                      params=params)
     if homework_statuses.status_code != 200:
