@@ -52,27 +52,31 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or time.time()
-    last_timestamp = timestamp
-    params = {'from_date': last_timestamp}
+    params = {'from_date': timestamp}
     try:
         homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
                                          params=params)
-    except telegram.error.BadRequest as e:
-        if e.homework_statuses.status_code != 200:
-            logger.error('Telegram не может правильно обработать запрос.'
-                         f'Ошибка: {e}.')
+    except telegram.error.TelegramError as te:
+        logger.error(
+            "Ошибка проверки Telegram: {error}".format(
+                error=te.message))
+    if homework_statuses.status_code != 200:
+        raise Exception('API возвращает код, отличный от 200')
     return(homework_statuses.json())
 
 
 def check_response(response):
     """Проверяем ответ API на корректность."""
     if type(response) is not dict:
-        raise TypeError(f'Не получен словарь от API-сервиса: %s')
-    if not 'homeworks':
-        raise KeyError('Нет ключа homeworks в словаре')
+        raise TypeError('Не получен словарь от API-сервиса.')
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
+    try:
+        response['homeworks']
+    except KeyError as err:
+        logger.error(f'Нет ключа homeworks в словаре. Ошибка {err}')
     return(response['homeworks'])
+
 
 
 def parse_status(homework):
