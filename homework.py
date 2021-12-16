@@ -39,13 +39,10 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-    try:
-        bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.info(f'Бот отправил сообщение: {message}.')
-    except telegram.error.BadRequest as e:
-       if e.result.status_code == 403 or e.result.status_code == 400:
-           logger.critical('Telegram не может правильно обработать запрос.'
-                           f'Ошибка: {e}.')
+
+    bot.send_message(TELEGRAM_CHAT_ID, message)
+    logger.info(f'Бот отправил сообщение: {message}.')
+
 
 
 def get_api_answer(current_timestamp):
@@ -53,11 +50,13 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or time.time()
     last_timestamp = timestamp
     params = {'from_date': last_timestamp}
-    homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
-                                     params=params)
-    if homework_statuses.status_code != 200:
-        raise Exception('API возвращает код, отличный от 200')
-    logger.exception
+    try:
+        homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
+                                         params=params)
+    except telegram.error.BadRequest as e:
+        if e.homework_statuses.status_code != 200:
+            logger.error('Telegram не может правильно обработать запрос.'
+                         f'Ошибка: {e}.')
     return(homework_statuses.json())
 
 
