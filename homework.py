@@ -78,12 +78,10 @@ def check_response(response):
     return(response['homeworks'])
 
 
-
 def parse_status(homework):
     """Извлекаем статус домашней работы."""
-    work = homework
-    name_hw = work["homework_name"]
-    status_hw = work["status"]
+    name_hw = homework["homework_name"]
+    status_hw = homework["status"]
     if status_hw in HOMEWORK_STATUSES.keys():
         verdict = HOMEWORK_STATUSES.get(status_hw)
         change = f'Изменился статус проверки работы "{name_hw}".{verdict}'
