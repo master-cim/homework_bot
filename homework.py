@@ -39,9 +39,13 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-    text = message
-    bot.send_message(TELEGRAM_CHAT_ID, text)
-    logger.info(f'Бот отправил сообщение: {text}.')
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+        logger.info(f'Бот отправил сообщение: {message}.')
+    except telegram.error.BadRequest as e:
+       if e.result.status_code == 403 or e.result.status_code == 400:
+           logger.critical('Telegram не может правильно обработать запрос.'
+                           f'Ошибка: {e}.')
 
 
 def get_api_answer(current_timestamp):
