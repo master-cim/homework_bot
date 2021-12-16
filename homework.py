@@ -22,10 +22,9 @@ handler.setFormatter(formatter)
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
-TELEGRAM_RETRY_TIME = 600
-
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+TELEGRAM_RETRY_TIME = 86400
 
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -48,7 +47,8 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or time.time()
-    params = {'from_date': timestamp}
+    last_timestamp = timestamp
+    params = {'from_date': last_timestamp}
     homework_statuses = requests.get(ENDPOINT, headers=HEADERS,
                                      params=params)
     if homework_statuses.status_code != 200:
@@ -60,7 +60,7 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяем ответ API на корректность."""
     if type(response) is not dict:
-        raise TypeError('Не получен словарь от API-сервиса: %s')
+        raise TypeError(f'Не получен словарь от API-сервиса: %s')
     if not 'homeworks':
         raise KeyError('Нет ключа homeworks в словаре')
     if type(response['homeworks']) is not list:
@@ -77,7 +77,7 @@ def parse_status(homework):
         verdict = HOMEWORK_STATUSES.get(status_hw)
         change = f'Изменился статус проверки работы "{name_hw}".{verdict}'
     else:
-        message = (f'Неизвестный статус работы - {status_hw}')
+        message = f'Неизвестный статус работы - {status_hw}'
         logger.error(message)
         raise TypeError(message)
     return change
@@ -98,13 +98,12 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time()) - TELEGRAM_RETRY_TIME
-    empty_list = []
     check_tokens()
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
-            if homework == empty_list:
+            if not homework:
                 logger.debug('Нет обновлений')
             else:
                 for work in homework:
@@ -117,9 +116,9 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
             bot.send_message(TELEGRAM_CHAT_ID, message)
-            time.sleep(RETRY_TIME)
+            time.sleep(TELEGRAM_RETRY_TIME)
         else:
-            time.sleep(RETRY_TIME)
+            time.sleep(TELEGRAM_RETRY_TIME)
 
 
 if __name__ == '__main__':
