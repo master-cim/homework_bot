@@ -3,6 +3,7 @@ import telegram
 import os
 import time
 import telegram.error
+from requests.exceptions import HTTPError
 
 
 from dotenv import load_dotenv
@@ -61,7 +62,8 @@ def get_api_answer(current_timestamp):
             "Ошибка проверки Telegram: {error}".format(
                 error=te.message))
     if homework_statuses.status_code != 200:
-        raise Exception('API возвращает код, отличный от 200')
+        raise HTTPError('API возвращает код, отличный от 200')
+    logger.error(f'API возвращает код, отличный от 200: {HTTPError}')
     return(homework_statuses.json())
 
 
@@ -71,28 +73,27 @@ def check_response(response):
         raise TypeError('Не получен словарь от API-сервиса.')
     if type(response['homeworks']) is not list:
         raise TypeError('Зачения ключа homeworks приходят не списком')
-    try:
-        response['homeworks']
-    except KeyError as err:
-        logger.error(f'Нет ключа homeworks в словаре. Ошибка {err}')
+    if not 'homeworks':
+        raise KeyError('Нет ключа homeworks в словаре')
+    logger.error(f'Нет ключа homeworks в словаре. Ошибка {KeyError}')
     return(response['homeworks'])
 
 
 def parse_status(homework):
     """Извлекаем статус домашней работы."""
-    try:
-        name_hw = homework["homework_name"]
-        status_hw = homework["status"]
-        if status_hw in HOMEWORK_STATUSES.keys():
-            verdict = HOMEWORK_STATUSES.get(status_hw)
-            change = f'Изменился статус проверки работы "{name_hw}".{verdict}'
-        else:
-            message = f'Неизвестный статус работы - {status_hw}'
-            logger.error(message)
-    except telegram.error.TelegramError as te:
-        logger.error(
-            "Ошибка проверки Telegram: {error}".format(
-                error=te.message))
+    name_hw = homework["homework_name"]
+    status_hw = homework["status"]
+    if 'homework_name' not in homework:
+        raise KeyError('Отсутствует ключ homework_name')
+    if 'status' not in homework:
+        raise KeyError('Отсутствует ключ status')
+    if status_hw in HOMEWORK_STATUSES:
+        verdict = HOMEWORK_STATUSES.get(status_hw)
+        change = f'Изменился статус проверки работы "{name_hw}".{verdict}'
+    else:
+        message = f'Неизвестный статус работы - {status_hw}'
+        logger.error(message)
+        raise KeyError('Отсутствует ключ status_hw')
     return change
 
 
